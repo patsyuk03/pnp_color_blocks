@@ -18,6 +18,13 @@ ament_target_dependencies(
   "moveit_msgs"
   "moveit_ros_planning_interface"
 )
+add_executable(pnp_try src/pnp_try.cpp)
+ament_target_dependencies(
+  pnp_try
+  "rclcpp"
+  "moveit_msgs"
+  "moveit_ros_planning_interface"
+)
 add_executable(get_xarm_pose src/get_xarm_pose.cpp)
 ament_target_dependencies(
   get_xarm_pose
@@ -27,7 +34,7 @@ ament_target_dependencies(
 )
 
 install(TARGETS 
-  pnp get_xarm_pose
+  pnp get_xarm_pose pnp_try
   DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY
   launch

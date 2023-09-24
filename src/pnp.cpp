@@ -1,6 +1,7 @@
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <moveit/move_group_interface/move_group_interface.h>
+// #include "ros2_aruco_interfaces/msg/aruco_markers.hpp"
 // #include <moveit/planning_scene_interface/planning_scene_interface.h>
 // #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
@@ -35,7 +36,7 @@ int main(int argc, char * argv[])
     }
 
     // Gripper open
-    move_group_gripper.setJointValueTarget({0.0});
+    move_group_gripper.setJointValueTarget("drive_joint", 0.8);
     success = (move_group_gripper.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
     if(success) {
         move_group_gripper.execute(my_plan);
