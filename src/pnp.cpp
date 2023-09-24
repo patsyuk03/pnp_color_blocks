@@ -1,62 +1,110 @@
+#include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <moveit/move_group_interface/move_group_interface.h>
-#include <moveit/planning_scene_interface/planning_scene_interface.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+// #include <moveit/planning_scene_interface/planning_scene_interface.h>
+// #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-// Create a ROS logger
-static const rclcpp::Logger LOGGER = rclcpp::get_logger("pnp");
+std::vector<double> initial_pose = {-0.611977, -0.824699, 0.035698, 0.799772, 0.026266, 1.624083, 0.075338};
 
-int main(int argc, char * argv[]){
+int main(int argc, char * argv[])
+{
     // Initialize ROS and create the Node
     rclcpp::init(argc, argv);
-    std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("pnp_node");
-    RCLCPP_INFO(LOGGER, "Initialize node");
+    auto const node = std::make_shared<rclcpp::Node>("pnp_node");
+
+    // Create a ROS logger
+    auto const logger = rclcpp::get_logger("pnp_node");
 
     // We spin up a SingleThreadedExecutor so we can get current joint values later
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(node);
-    std::thread([&executor]() { executor.spin(); }).detach();
-    RCLCPP_INFO(LOGGER, "Created executor");
+    auto spinner = std::thread([&executor]() { executor.spin(); });
 
-    // Create the MoveIt Move Group Interface for xArm7
-    using moveit::planning_interface::MoveGroupInterface;
-    auto move_group = MoveGroupInterface(node, "xarm7");
-    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-
-// Adding table
-    auto const add_object1 = [frame_id = move_group.getPlanningFrame()] {
-        moveit_msgs::msg::CollisionObject add_object1;
-        add_object1.header.frame_id = frame_id;
-        add_object1.id = "table";
-        shape_msgs::msg::SolidPrimitive primitive;
-
-        // Define the size of the box in meters
-        primitive.type = primitive.BOX;
-        primitive.dimensions.resize(3);
-        primitive.dimensions[primitive.BOX_X] = 1.5;
-        primitive.dimensions[primitive.BOX_Y] = 1.5;
-        primitive.dimensions[primitive.BOX_Z] = 0.1;
-
-        // Define the pose of the box (relative to the frame_id)
-        geometry_msgs::msg::Pose table_pose;
-        table_pose.orientation.w = 1.0;
-        table_pose.position.x = 0.5;
-        table_pose.position.y = 0.0;
-        table_pose.position.z = -0.1;
-
-        add_object1.primitives.push_back(primitive);
-        add_object1.primitive_poses.push_back(table_pose);
-        add_object1.operation = add_object1.ADD;
-
-        return add_object1;}();
-    planning_scene_interface.applyCollisionObject(add_object1);
-
-// Go to initial position
-    move_group.setJointValueTarget(move_group.getNamedTargetValues("home"));
-
-    // Create a plan to that target pose and check if that plan is successful
+    // Create the MoveIt Move Group Interface for xarm and gripper
+    moveit::planning_interface::MoveGroupInterface move_group_xarm(node, "xarm7");
+    moveit::planning_interface::MoveGroupInterface move_group_gripper(node, "xarm_gripper");
     moveit::planning_interface::MoveGroupInterface::Plan my_plan;
-    bool success = (move_group.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
-    if (success){move_group.execute(my_plan);}
-    RCLCPP_INFO(LOGGER, "Executing plan 0 (home position) %s", success ? "" : "FAILED");
+
+    // Move to initial position
+    move_group_xarm.setJointValueTarget(initial_pose);
+    bool success = (move_group_xarm.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+    if(success) {
+        move_group_xarm.execute(my_plan);
+    } else {
+        RCLCPP_ERROR(logger, "Planing failed!");
+    }
+
+    // Gripper open
+    move_group_gripper.setJointValueTarget({0.0});
+    success = (move_group_gripper.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+    if(success) {
+        move_group_gripper.execute(my_plan);
+    } else {
+        RCLCPP_ERROR(logger, "Planing failed!");
+    }
+
+    // Move to block
+    geometry_msgs::msg::PoseStamped block_pose;
+    block_pose.pose.position.x = 0.29;
+    block_pose.pose.position.y = -0.30;
+    block_pose.pose.position.z = 0.06;
+
+    geometry_msgs::msg::PoseStamped xarm_pose = move_group_xarm.getCurrentPose();
+    xarm_pose.pose.position.x = block_pose.pose.position.x;
+    xarm_pose.pose.position.y = block_pose.pose.position.y;
+    xarm_pose.pose.position.z = block_pose.pose.position.z+0.2;
+
+    move_group_xarm.setPoseTarget(xarm_pose);
+    success = (move_group_xarm.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+    if(success) {
+        move_group_xarm.execute(my_plan);
+    } else {
+        RCLCPP_ERROR(logger, "Planing failed!");
+    }
+
+    // Move down
+    std::vector<geometry_msgs::msg::Pose> waypoints;
+    xarm_pose.pose.position.z = xarm_pose.pose.position.z-0.2;
+    waypoints.push_back(xarm_pose.pose);
+    moveit_msgs::msg::RobotTrajectory trajectory;
+    const double jump_threshold = 0.0;
+    const double eef_step = 0.01;
+    double fraction = move_group_xarm.computeCartesianPath(waypoints, eef_step,   jump_threshold, trajectory);
+    RCLCPP_INFO(logger, "Visualizing Cartesian path plan (%.2f%% achieved)", fraction * 100.0);
+    if(fraction == 1){
+        move_group_xarm.execute(trajectory);
+    }
+
+    // Close gripper
+    move_group_gripper.setJointValueTarget("drive_joint", 0.8);
+    success = (move_group_gripper.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+    if(success) {
+        move_group_gripper.execute(my_plan);
+    } else {
+        RCLCPP_ERROR(logger, "Planing failed!");
+    }
+
+    // Move up
+    waypoints = {};
+    xarm_pose.pose.position.z = xarm_pose.pose.position.z+0.2;
+    waypoints.push_back(xarm_pose.pose);
+    fraction = move_group_xarm.computeCartesianPath(waypoints, eef_step,   jump_threshold, trajectory);
+    RCLCPP_INFO(logger, "Visualizing Cartesian path plan (%.2f%% achieved)", fraction * 100.0);
+    if(fraction == 1){
+        move_group_xarm.execute(trajectory);
+    }
+
+    // Move to initial position
+    move_group_xarm.setJointValueTarget(initial_pose);
+    success = (move_group_xarm.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+    if(success) {
+        move_group_xarm.execute(my_plan);
+    } else {
+        RCLCPP_ERROR(logger, "Planing failed!");
+    }
+
+    // Shutdown
+    rclcpp::shutdown();
+    spinner.join();
+    return 0;
 }
