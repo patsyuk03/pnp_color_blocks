@@ -15,7 +15,7 @@ def generate_launch_description():
 
     ld.add_action(DeclareLaunchArgument("add_gripper", default_value="true"))
     ld.add_action(DeclareLaunchArgument("robot_ip", default_value="192.168.1.196"))
-    ld.add_action(DeclareLaunchArgument("use_fake_hardware", default_value="true"))
+    ld.add_action(DeclareLaunchArgument("use_fake_hardware", default_value="false"))
 
     add_gripper = LaunchConfiguration("add_gripper")
     robot_ip = LaunchConfiguration("robot_ip")
@@ -53,9 +53,10 @@ def generate_launch_description():
     ld.add_action(Node(
         package="tf2_ros",
         executable="static_transform_publisher",
-        arguments=["0.07","-0.013","0","0","0","0","link_eef",'camera_link'],
+        arguments=["0.07","-0.025","0.01","1.571","0","0","link_eef",'camera_link'],
         output="screen"
     ))
+    
     ld.add_action(Node(
         package='ros2_aruco', 
         executable='aruco_node', 
@@ -65,7 +66,11 @@ def generate_launch_description():
                     {'image_topic': '/camera/color/image_raw'},
                     {'camera_info_topic': '/camera/color/camera_info'}]
     ))
-
+    ld.add_action(Node(
+        package="pnp_color_blocks",
+        executable="transform_pose_marker",
+        output="screen"
+    ))
     # saved_joint_states = os.path.join(get_package_share_directory('pnp_color_blocks'), 'yaml/saved_joint_states.yaml')
     
     # ld.add_action(Node(

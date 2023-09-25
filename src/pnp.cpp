@@ -1,11 +1,28 @@
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <moveit/move_group_interface/move_group_interface.h>
-// #include "ros2_aruco_interfaces/msg/aruco_markers.hpp"
-// #include <moveit/planning_scene_interface/planning_scene_interface.h>
-// #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include "geometry_msgs/msg/pose_array.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 std::vector<double> initial_pose = {-0.097065, -0.842345, -0.005829, 0.710569, -0.014803, 1.588374, 0.000941};
+geometry_msgs::msg::PoseStamped block_pose;
+
+void callback(const geometry_msgs::msg::PoseArray::SharedPtr msg)
+{
+    geometry_msgs::msg::PoseArray marker_pose;            
+        marker_pose = *msg;
+        if (!marker_pose.poses.empty()){
+            block_pose.pose.position.x = marker_pose.poses[0].position.x;
+            block_pose.pose.position.y = marker_pose.poses[0].position.y;
+            block_pose.pose.position.z = marker_pose.poses[0].position.z;
+
+            block_pose.pose.orientation.x = marker_pose.poses[0].orientation.x;
+            block_pose.pose.orientation.y = marker_pose.poses[0].orientation.y;
+            block_pose.pose.orientation.z = marker_pose.poses[0].orientation.z;	
+            block_pose.pose.orientation.w = marker_pose.poses[0].orientation.w;
+        };
+}
+
 
 int main(int argc, char * argv[])
 {
@@ -21,6 +38,9 @@ int main(int argc, char * argv[])
     executor.add_node(node);
     auto spinner = std::thread([&executor]() { executor.spin(); });
 
+    // Subscribe to aruco_poses
+    auto subscription = node->create_subscription<geometry_msgs::msg::PoseArray>("tf_aruco_poses", 100, callback);
+
     // Create the MoveIt Move Group Interface for xarm and gripper
     moveit::planning_interface::MoveGroupInterface move_group_xarm(node, "xarm7");
     moveit::planning_interface::MoveGroupInterface move_group_gripper(node, "xarm_gripper");
@@ -33,14 +53,13 @@ int main(int argc, char * argv[])
 
     geometry_msgs::msg::PoseStamped xarm_pose;
 
-    geometry_msgs::msg::PoseStamped block_pose;
-    block_pose.pose.position.x = 0.422677;
-    block_pose.pose.position.y = -0.058144;
-    block_pose.pose.position.z = 0.004785;
-    block_pose.pose.orientation.x = 0.997906;
-    block_pose.pose.orientation.y = -0.058829;
-    block_pose.pose.orientation.z = 0.025479;
-    block_pose.pose.orientation.w = 0.008559;
+    // block_pose.pose.position.x = 0.422677;
+    // block_pose.pose.position.y = -0.058144;
+    // block_pose.pose.position.z = 0.004785;
+    // block_pose.pose.orientation.x = 0.997906;
+    // block_pose.pose.orientation.y = -0.058829;
+    // block_pose.pose.orientation.z = 0.025479;
+    // block_pose.pose.orientation.w = 0.008559;
 
     geometry_msgs::msg::PoseStamped box_pose;
     box_pose.pose.position.x = 0.176080;
@@ -71,13 +90,19 @@ int main(int argc, char * argv[])
 
     // Move to block
     xarm_pose = move_group_xarm.getCurrentPose();
-    xarm_pose.pose.position.x = block_pose.pose.position.x;
-    xarm_pose.pose.position.y = block_pose.pose.position.y;
+    xarm_pose.pose = block_pose.pose;
+    tf2::Quaternion q_orig, q_rot, q_new;
+    tf2::convert(xarm_pose.pose.orientation , q_orig);
+    double r=3.14159, p=0, y=0;  // Rotate the previous pose by 180* about X
+    q_rot.setRPY(r, p, y);
+    q_new = q_rot*q_orig;  // Calculate the new orientation
+    q_new.normalize();
+    tf2::convert(q_new, xarm_pose.pose.orientation);
+    RCLCPP_INFO(logger, "Header: %s", xarm_pose.header.frame_id.c_str());
+    RCLCPP_INFO(logger, "x: %f", xarm_pose.pose.position.x); 
+    RCLCPP_INFO(logger, "y: %f", xarm_pose.pose.position.y);
+    RCLCPP_INFO(logger, "z: %f", xarm_pose.pose.position.z);
     xarm_pose.pose.position.z = block_pose.pose.position.z+0.2;
-    xarm_pose.pose.orientation.x = block_pose.pose.orientation.x;
-    xarm_pose.pose.orientation.y = block_pose.pose.orientation.y;
-    xarm_pose.pose.orientation.z = block_pose.pose.orientation.z;
-    xarm_pose.pose.orientation.w = block_pose.pose.orientation.w;
 
     waypoints = {};
     waypoints.push_back(xarm_pose.pose);
@@ -127,13 +152,8 @@ int main(int argc, char * argv[])
 
     // Move to box
     xarm_pose = move_group_xarm.getCurrentPose();
-    xarm_pose.pose.position.x = box_pose.pose.position.x;
-    xarm_pose.pose.position.y = box_pose.pose.position.y;
+    xarm_pose.pose= box_pose.pose;
     xarm_pose.pose.position.z = box_pose.pose.position.z+0.2;
-    xarm_pose.pose.orientation.x = box_pose.pose.orientation.x;
-    xarm_pose.pose.orientation.y = box_pose.pose.orientation.y;
-    xarm_pose.pose.orientation.z = box_pose.pose.orientation.z;
-    xarm_pose.pose.orientation.w = box_pose.pose.orientation.w;
 
     waypoints = {};
     waypoints.push_back(xarm_pose.pose);
