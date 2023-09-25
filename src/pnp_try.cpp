@@ -7,7 +7,7 @@
 using std::placeholders::_1;
 std::vector<double> initial_pose = {-0.611977, -0.824699, 0.035698, 0.799772, 0.026266, 1.624083, 0.075338};
 
-
+/*
 class PnPBlocks : public rclcpp::Node {
     public:
     PnPBlocks(): Node("pnp")
@@ -111,11 +111,11 @@ class PnPBlocks : public rclcpp::Node {
     // rclcpp::Node::SharedPtr node_;
 };
 
-
+*/
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<PnPBlocks>();
+//   auto node = std::make_shared<PnPBlocks>();
   rclcpp::shutdown();
   return 0;
 }
