@@ -14,15 +14,26 @@ find_package(ros2_aruco_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 
-add_executable(pnp src/pnp.cpp)
+add_executable(pnp_xarm src/pnp_xarm.cpp)
 ament_target_dependencies(
-  pnp
+  pnp_xarm
   "rclcpp"
   "moveit_msgs"
   "moveit_ros_planning_interface"
   "geometry_msgs"
   "tf2_geometry_msgs"
 )
+
+add_executable(pnp_ur src/pnp_ur.cpp)
+ament_target_dependencies(
+  pnp_ur
+  "rclcpp"
+  "moveit_msgs"
+  "moveit_ros_planning_interface"
+  "geometry_msgs"
+  "tf2_geometry_msgs"
+)
+
 add_executable(pnp_try src/pnp_try.cpp)
 ament_target_dependencies(
   pnp_try
@@ -40,16 +51,16 @@ ament_target_dependencies(
   "tf2_ros"
   "tf2_geometry_msgs"
 )
-add_executable(get_xarm_pose src/get_xarm_pose.cpp)
+add_executable(get_robot_pose src/get_robot_pose.cpp)
 ament_target_dependencies(
-  get_xarm_pose
+  get_robot_pose
   "rclcpp"
   "moveit_msgs"
   "moveit_ros_planning_interface"
 )
 
 install(TARGETS 
-  pnp get_xarm_pose pnp_try transform_pose_marker
+  pnp_xarm pnp_ur get_robot_pose pnp_try transform_pose_marker
   DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY
   launch

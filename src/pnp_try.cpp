@@ -16,6 +16,11 @@ class PnPBlocks : public rclcpp::Node {
         executor.add_node(this->get_node_base_interface());
         auto spinner = std::thread([&executor]() { executor.spin(); });
 
+        // move_group_xarm = NULL;
+        // move_group_gripper = NULL;
+
+
+
         // Create the MoveIt Move Group Interface for xarm and gripper
 
         // auto move_group_node = rclcpp::Node::make_shared("move_group_node");
@@ -27,10 +32,8 @@ class PnPBlocks : public rclcpp::Node {
         // moveit::planning_interface::MoveGroupInterface move_group_xarm(move_group_node, "xarm7");
         // moveit::planning_interface::MoveGroupInterface move_group_gripper(move_group_node, "xarm_gripper");
 
-        auto move_group_node = rclcpp::Node::make_shared("move_group_node");
-        moveit::planning_interface::MoveGroupInterface move_group_xarm(move_group_node, "xarm7");
-        moveit::planning_interface::MoveGroupInterface move_group_gripper(move_group_node, "xarm_gripper");
-
+        // auto move_group_node = rclcpp::Node::make_shared("move_group_node");
+        
         // move_group_xarm = std::make_shared<moveit::planning_interface::MoveGroupInterface>(node, "xarm7");
         // move_group_gripper = std::make_shared<moveit::planning_interface::MoveGroupInterface>(node, "xarm_gripper");
 
@@ -38,7 +41,7 @@ class PnPBlocks : public rclcpp::Node {
         block_pose.pose.position.y = -0.30;
         block_pose.pose.position.z = 0.06;
 
-        initial_position();
+        // initial_position();
         // gripper_state(0.0);
         // pose_goal(block_pose);
         // cartesian_path(-0.2);
@@ -46,6 +49,15 @@ class PnPBlocks : public rclcpp::Node {
         // cartesian_path(0.2);
         // initial_position();
     }
+    // void PnPBlocks::initialize()
+    // {
+    //     using moveit::planning_interface::MoveGroupInterface;
+        // move_group_xarm = MoveGroupInterface(shared_from_this(), "xarm7");
+        // move_group_gripper = MoveGroupInterface(shared_from_this(), "xarm_gripper");
+        // moveit::planning_interface::MoveGroupInterface move_group_xarm(shared_from_this(), "xarm7");
+        // moveit::planning_interface::MoveGroupInterface move_group_gripper(shared_from_this(), "xarm_gripper");
+
+    // }
     private:
     void callback(const geometry_msgs::msg::PoseArray::SharedPtr msg) {
         geometry_msgs::msg::PoseArray marker_pose;            
@@ -61,10 +73,10 @@ class PnPBlocks : public rclcpp::Node {
             block_pose.pose.orientation.w = marker_pose.poses[0].orientation.w;	
         };
     }
-    void initial_position() {
-        move_group_xarm->setJointValueTarget(initial_pose);
-        success = (move_group_xarm->plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
-        move_group_xarm->execute(my_plan);
+    // void initial_position() {
+        // move_group_xarm.setJointValueTarget(initial_pose);
+        // success = (move_group_xarm.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
+        // move_group_xarm.execute(my_plan);
         // move_group_xarm.setJointValueTarget(initial_pose);
         // success = (move_group_xarm.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
         // if(success) {
@@ -72,7 +84,7 @@ class PnPBlocks : public rclcpp::Node {
         // } else {
         //     RCLCPP_ERROR(this->get_logger(), "Planing failed!");
         // }
-    }
+    // }
     // void gripper_state(double state) {
     //     move_group_gripper.setJointValueTarget("drive_joint", state);
     //     success = (move_group_gripper.plan(my_plan) == moveit::core::MoveItErrorCode::SUCCESS);
@@ -107,8 +119,8 @@ class PnPBlocks : public rclcpp::Node {
     // }
     rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr sub;
 
-    moveit::planning_interface::MoveGroupInterfacePtr move_group_xarm;
-    moveit::planning_interface::MoveGroupInterfacePtr move_group_gripper;
+    // moveit::planning_interface::MoveGroupInterfacePtr move_group_xarm;
+    // moveit::planning_interface::MoveGroupInterfacePtr move_group_gripper;
 
     // moveit::planning_interface::MoveGroupInterface move_group_xarm;
     // moveit::planning_interface::MoveGroupInterface move_group_gripper;
@@ -130,6 +142,7 @@ int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<PnPBlocks>();
+//   node->initialize();
   rclcpp::shutdown();
   return 0;
 }
