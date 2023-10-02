@@ -39,6 +39,6 @@ ros2 launch pnp_color_blocks pnp_ur.launch.py use_fake_hardware:=false initial_j
 ```
 
 ## Video
-[Fake UR5 Demo](https://drive.google.com/file/d/1nLHYhd_WZ5f-bM-RubpxMBOtdzch6dja/view?usp=sharing)
-<br>[Real UR5 Demo](https://drive.google.com/file/d/1WiFpZSDHNDPwOtFkNj7hlaCUSuZL0VnX/view?usp=sharing)
-<br>[Gripper Test](https://drive.google.com/file/d/1XC9qQ7-eF8SWQTS7kdvK5kSlMvBzGDXq/view?usp=sharing)
+[PnP xArm Hardcoded](https://drive.google.com/file/d/1uUSpr8zKzx_lnE6bKlBnnQAt5B_JegTA/view?usp=drive_link)
+<br>[PnP xArm AR Detection](https://drive.google.com/file/d/1uL7H9Ht0ZtTEiZGmgDwxQWmEF36SD44k/view?usp=drive_link)
+<br>[PnP UR5 Hardcoded](https://drive.google.com/file/d/1wSQwMxBCuMiS8LZaSig6x-O4G_f5scyu/view?usp=drive_link)
