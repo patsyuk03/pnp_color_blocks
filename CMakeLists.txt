@@ -13,6 +13,7 @@ find_package(moveit_ros_planning_interface REQUIRED)
 find_package(ros2_aruco_interfaces REQUIRED) 
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(gripper_srv REQUIRED)
 
 add_executable(pnp_xarm src/pnp_xarm.cpp)
 ament_target_dependencies(
@@ -32,6 +33,14 @@ ament_target_dependencies(
   "moveit_ros_planning_interface"
   "geometry_msgs"
   "tf2_geometry_msgs"
+  "gripper_srv"
+)
+
+add_executable(test_robotiq_gripper src/test_robotiq_gripper.cpp)
+ament_target_dependencies(
+  test_robotiq_gripper
+  "rclcpp"
+  "gripper_srv"
 )
 
 add_executable(pnp_try src/pnp_try.cpp)
@@ -60,7 +69,7 @@ ament_target_dependencies(
 )
 
 install(TARGETS 
-  pnp_xarm pnp_ur get_robot_pose pnp_try transform_pose_marker
+  pnp_xarm pnp_ur get_robot_pose pnp_try transform_pose_marker test_robotiq_gripper
   DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY
   launch
