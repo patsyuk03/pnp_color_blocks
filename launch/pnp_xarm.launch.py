@@ -8,8 +8,6 @@ from launch.substitutions import LaunchConfiguration
 from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import LaunchConfiguration
 
-
-
 def generate_launch_description():
     ld = LaunchDescription()
 
@@ -47,7 +45,6 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('realsense2_camera'), 'launch/rs_launch.py')
         ),
-        # launch_arguments={'add_gripper': True}.items(),
     ))
     
     ld.add_action(Node(
@@ -73,12 +70,10 @@ def generate_launch_description():
     ))
     # saved_joint_states = os.path.join(get_package_share_directory('pnp_color_blocks'), 'yaml/saved_joint_states.yaml')
     
-    # ld.add_action(Node(
-    #     package="pnp_color_blocks",
-    #     executable="pnp",
-    #     name="saved_joint_states",
-    #     output="screen",
-    #     parameters=[saved_joint_states]
-    # ))
+    ld.add_action(Node(
+        package="pnp_color_blocks",
+        executable="pnp_xarm",
+        output="screen",
+    ))
 
     return ld
