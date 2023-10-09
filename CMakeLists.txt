@@ -36,6 +36,16 @@ ament_target_dependencies(
   "gripper_srv"
 )
 
+add_executable(pnp_ur_no_gripper src/pnp_ur_no_gripper.cpp)
+ament_target_dependencies(
+  pnp_ur_no_gripper
+  "rclcpp"
+  "moveit_msgs"
+  "moveit_ros_planning_interface"
+  "geometry_msgs"
+  "tf2_geometry_msgs"
+)
+
 add_executable(test_robotiq_gripper src/test_robotiq_gripper.cpp)
 ament_target_dependencies(
   test_robotiq_gripper
@@ -69,7 +79,7 @@ ament_target_dependencies(
 )
 
 install(TARGETS 
-  pnp_xarm pnp_ur get_robot_pose pnp_try transform_pose_marker test_robotiq_gripper
+  pnp_xarm pnp_ur get_robot_pose pnp_try transform_pose_marker test_robotiq_gripper pnp_ur_no_gripper
   DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY
   launch
